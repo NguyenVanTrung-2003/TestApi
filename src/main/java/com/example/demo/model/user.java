@@ -1,7 +1,8 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
-
+import lombok.Builder;
+@Builder
 @Entity
 @Table(name="nguoidung")
 public class user {
@@ -53,4 +54,5 @@ public class user {
     public user(){
 
     }
+
 }

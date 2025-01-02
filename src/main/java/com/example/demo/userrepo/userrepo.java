@@ -26,4 +26,6 @@ public interface userrepo extends JpaRepository <user,Long> {
 
     @Query("select u from user u where lower(u.name) like lower(concat('%', :name, '%'))")
     List<user> findByNameContainingIgnoreCase(@Param("name") String name);
+
+    List<Long> id(long id);
 }

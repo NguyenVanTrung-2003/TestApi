@@ -3,7 +3,9 @@ package com.example.demo.controller;
 
 import com.example.demo.model.user;
 import com.example.demo.userrepo.userrepo;
+import org.hibernate.exception.DataException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -76,34 +78,53 @@ public class usercontroller {
         }
     }
     @PostMapping("/adduser")
-    private ResponseEntity<Map<String, Object>> adduser(@RequestBody  user user1){
-            try {
-                if(user1==null|| user1.getName()==null||user1.getName().trim().isEmpty()||user1.getDc()==null||user1.getDc().trim().isEmpty()||user1.getAge()>1||user1.getAge()<100){
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                            "status",0,
-                            "message","Invalid input: Name and address cannot be null",
-                            "code",500,
-                            "data" ,null
-                    ));
-                }
-                user user=repo.save(user1);
-                return  ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                        "status",1,
-                        "message","User added successfully",
-                        "code",201,
-                        "data",user
-                ));
-
-            }catch (Exception e){
-                e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                        "status",0,
-                        "message","An error occurred while adding user",
-                        "code",500,
-                        "data",null
+    private ResponseEntity<Map<String, Object>> adduser(@RequestBody user user1) {
+        try {
+            if (user1 == null || user1.getName() == null && user1.getName().trim().isEmpty() ||user1.getDc().trim().isEmpty() && user1.getDc() == null || user1.getAge() < 1 || user1.getAge() > 100) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                        "status", 0,
+                        "message", "Dữ liệu ràng buộc không đúng",
+                        "code", 900,
+                        "data", null
                 ));
             }
+
+            if (repo.existsById(user1.getId())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                        "status", 0,
+                        "message", "Người dùng đã tồn tại trong cơ sở dữ liệu",
+                        "code", 902,
+                        "data", null
+                ));
+            }
+
+            user user = repo.save(user1);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "status", 1,
+                    "message", "Thêm user thành công",
+                    "code", 201,
+                    "data", user
+            ));
+        } catch (Exception e) {
+
+            if (e instanceof DataAccessException) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                        "status", 0,
+                        "message", "Truy cập vào cơ sở dữ liệu thất bại",
+                        "code", 901,
+                        "data", null
+                ));
+            }
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", 0,
+                    "message", "Đã xảy ra lỗi khi thêm user",
+                    "code", 500,
+                    "data", null
+            ));
+        }
     }
+
     @DeleteMapping("/deleteuser/{id}")
     private ResponseEntity<Map<String,Object>> deleteuser(@PathVariable long id) {
         try {
